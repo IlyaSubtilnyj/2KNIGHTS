@@ -2,121 +2,18 @@
 
 #include <iterator>
 #include <utility>
-#include <list>
 #include <cmath>
 #include <numeric>
 #include <algorithm>
 #include <vector>
 #include <cassert>
 #include <memory>
+#include <Path.hpp>
 
 namespace TwoKnights 
 {
 
-    //заимплементить итератор
-    class Path {
-        public:
-        using path_t = std::list<int>;
-        enum STEP: int {
-            TINY = 0b0001,
-            LONG = 0b0010,
-        };
-        private:
-        int __stepsCount;
-        int __firstshortStep;
-        path_t __shortestXAxisPath;
-        protected:
-        path_t& path() {
-            return this->__shortestXAxisPath;
-        }
-
-        public:
-
-        Path() = default;
-
-        Path(int dist)
-        {
-            this->initNewPath(dist);
-        }
-
-        void to(int dist) {
-            this->initNewPath(dist);
-        }
-
-        private:
-
-        void initNewPath(int dist) {
-
-            auto& p = this->path();
-            
-            auto dummy = std::floor(dist / STEP::LONG);
-
-            this->__stepsCount      = dummy;
-            this->__firstshortStep  = dummy + 1;
-
-            p.assign(dummy, STEP::LONG);
-
-            if(dist % STEP::LONG) {
-
-                this->__stepsCount++;
-                this->__firstshortStep++;
-                p.push_back(STEP::TINY);
-            }
-        }
-
-        public:
-        void extend() {
-
-            auto& p = this->path();
-
-            auto it = p.begin();
-            std::advance(it, __firstshortStep - 1 - 1);
-            
-            p.insert(it, 1);
-            p.insert(it, 1);
-            p.erase(it);
-
-            this->__stepsCount++;
-            this->__firstshortStep--;
-        }
-
-        std::pair<int, int> stats(bool reverse = false) {
-
-            std::pair<int, int> result{
-                this->__stepsCount - (this->__firstshortStep - 1),
-                this->__firstshortStep - 1
-            };
-
-            if(reverse) {
-
-                std::swap(result.first, result.second);
-            }
-            
-            return result;
-        }
-
-        std::vector<int> get() {
-
-            auto& p = this->path();
-            return {p.begin(), p.end()};
-        }
-
-        std::vector<int> reverse() {
-
-            std::vector<int> res(this->__stepsCount);
-            auto& p = this->path();
-            std::transform(p.begin(), p.end(), res.begin(), [this](int value) -> int {
-                return this->reverseStep(static_cast<STEP>(value));
-            });
-
-            return res;
-        }
-
-        STEP reverseStep(STEP step) {
-
-            return static_cast<STEP>(step xor 0b0011);
-        }
-    };
+    bool findCombinations(const std::vector<int>& numbers, int target, std::vector<int>& currentCombination, int index);
 
     class Solution {
         
@@ -182,7 +79,7 @@ namespace TwoKnights
          */
         private:
 
-        Path path;
+        Path<int> path;
         std::pair<coor_t, coor_t> _kx;
         std::pair<coor_t, coor_t> _ky;
         
@@ -202,76 +99,44 @@ namespace TwoKnights
         }
         
         public:
-        
-        void Get() {
-            
-            auto modelCoor = this->_getModelCoor();
-            return this->fill(modelCoor.first, modelCoor.second);
-        }
-        
-        void fill(coor_t xdist, coor_t ydist) {
-
-            this->path.to(xdist);
-
-            std::pair<int, int> stats = this->path.stats(true);
-
-            while (not this->canReachTarget(stats.first, stats.second, ydist)) {
+            void Get() {
                 
-                this->path.extend();
-                stats = this->path.stats(true);
+                auto modelCoor = this->_getModelCoor();
+                return this->fill(modelCoor.first, modelCoor.second);
             }
+            void fill(coor_t xdist, coor_t ydist) {
 
-            path_t _lc;
+                this->path.to(xdist);
 
-            this->findCombinations(this->path.reverse(), ydist, _lc, 0); //сделать через итераторы
-            
-            this->setXAxiPath(std::make_shared<path_t>(this->path.get())); //сделать через итераторы
-            this->setYAxiPath(std::make_shared<path_t>(_lc.begin(), _lc.end()));
-        }
-        
-        bool findCombinations(const path_t& numbers, int target, path_t& currentCombination, int index) const {
-            
-            if (index == numbers.size()) {
-                int total = 0;
-                for (int num : currentCombination) {
-                    total += num;
+                auto [ones, twos] = this->path.stats();
+
+                while (not this->canReachTarget(twos, ones, ydist)) {
+                    
+                    this->path.extend();
+                    std::tie(ones, twos) = this->path.stats();
                 }
-                return total == target;
-            }
-        
-            // Рассмотрим текущий элемент с плюсом
-            currentCombination.push_back(numbers[index]);
-            if (findCombinations(numbers, target, currentCombination, index + 1)) {
-                return true;
-            }
-            currentCombination.pop_back();
-        
-            // Рассмотрим текущий элемент с минусом
-            currentCombination.push_back(-numbers[index]);
-            if (findCombinations(numbers, target, currentCombination, index + 1)) {
-                return true;
-            }
-            currentCombination.pop_back();
-        
-            return false; // Если ни один из вариантов не подошел
-        }
 
+                path_t _lc;
+
+                std::vector<int> _l(this->path.rbegin(), this->path.rend());
+
+                findCombinations(_l, ydist, _lc, 0); //сделать через итераторы
+                
+                this->setXAxiPath(std::make_shared<path_t>(this->path.begin(), this->path.end()));
+                this->setYAxiPath(std::make_shared<path_t>(_lc.begin(), _lc.end()));
+            }
         private:
-
-        bool canReachTarget(int countOf1, int countOf2, int target) const {
-            
-            auto maxSum = countOf1 + 2 * countOf2;
-        
-            if (target > maxSum) {
-                return false;
+            bool canReachTarget(int countOf1, int countOf2, int target) const {
+                
+                auto maxSum = countOf1 + 2 * countOf2;
+                if (target > maxSum) {
+                    return false;
+                }
+                if ((target % 2) != (maxSum % 2)) {
+                    return false;
+                }
+                return true;
             }
-        
-            if ((target % 2) != (maxSum % 2)) {
-                return false;
-            }
-            
-            return true;
-        }
     };
 }
 
