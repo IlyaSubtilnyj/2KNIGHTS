@@ -1,1 +1,10 @@
-/build
+# CMake build directories
+/build/
+/bin/
+/lib/
+/.vscode/
+
+# CMake files
+CMakeCache.txt
+CMakeFiles/
+Makefile
