@@ -14,11 +14,7 @@ Output
 Если задача допускает несколько решений, выведите любое из них. Если решения не существует, выведите три ноля.
 
 Examples
-standard input	standard output
-8 8             3 3 6
-3 2
-5 7
-	
-2 3             0 0 0
-1 1
-2 1
+standard input:	8 8  3 2  5 7 standard output: 3 3 6
+standard input:	2 3  1 1  2 1 standard output: 0 0 0
+
+https://acm.bsu.by/contests/249/problems/4849/
