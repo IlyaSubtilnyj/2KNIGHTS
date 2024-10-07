@@ -9,6 +9,6 @@ add_subdirectory(src)
 add_subdirectory(tests)
 endif()
 
-add_executable(2KNIGHTS src/main.cpp)
+add_executable(2KNIGHTS src/main.cpp src/2knights.cpp src/Path.cpp)
 
 target_include_directories(2KNIGHTS PUBLIC include)
